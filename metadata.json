@@ -1,0 +1,5 @@
+{
+  "name": "Web-Logic Virtual Instrument Suite",
+  "description": "A high-performance web-based virtual instrument workstation featuring a dual-channel oscilloscope, signal generator, PWM controller, DC power supply, and a 16-channel logic analyzer with AI-powered signal analysis.",
+  "requestFramePermissions": []
+}
