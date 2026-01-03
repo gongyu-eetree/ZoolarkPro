@@ -1,21 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Activity, 
-  Zap, 
-  Settings, 
-  Cpu, 
-  Play, 
-  Square, 
-  Waves,
-  Share2,
-  Battery,
-  Tally4,
-  Usb,
-  Link,
-  Loader2
+  Activity, Zap, Settings, Cpu, Play, Square, 
+  Waves, Share2, Battery, Tally4, MessageSquare
 } from 'lucide-react';
-import { InstrumentState, ConnectionStatus } from './types';
+import { InstrumentState } from './types';
 import Oscilloscope from './components/Oscilloscope';
 import SignalGenerator from './components/SignalGenerator';
 import LogicAnalyzer from './components/LogicAnalyzer';
@@ -26,169 +15,108 @@ import PWMGenerator from './components/PWMGenerator';
 import AIAssistant from './components/AIAssistant';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'GEN' | 'SCOPE' | 'SPECTRUM' | 'NETWORK' | 'LOGIC' | 'DC' | 'PWM'>('GEN');
+  const [activeTab, setActiveTab] = useState<'GEN' | 'SCOPE' | 'SPECTRUM' | 'NETWORK' | 'LOGIC' | 'DC' | 'PWM'>('SCOPE');
   const [isRunning, setIsRunning] = useState(true);
+  const [isAIOpen, setIsAIOpen] = useState(false);
+  
   const [state, setState] = useState<InstrumentState>({
     connectionStatus: 'DISCONNECTED',
     scope: {
-      ch1: { enabled: true, scale: 1, offset: 0, color: '#06b6d4' },
-      ch2: { enabled: true, scale: 2, offset: 0, color: '#fbbf24' },
+      ch1: { enabled: true, scale: 1, offset: 0, color: '#3b82f6' },
+      ch2: { enabled: true, scale: 2, offset: 0, color: '#f59e0b' },
       timebase: 0.001,
       triggerMode: 'AUTO',
       triggerLevel: 0,
       isArmed: false,
     },
-    generator: {
-      enabled: false,
-      type: 'SINE',
-      frequency: 1000,
-      amplitude: 5,
-      offset: 0,
-    },
-    pwm: {
-      enabled: false,
-      frequency: 10000,
-      dutyCycle: 50,
-    },
-    dc: {
-      voltage: 0,
-    },
-    logicAnalyzer: {
-      enabled: true,
-      channels: Array(16).fill(true),
-      sampleRate: 1000000,
-      triggerMode: 'AUTO',
-      isArmed: false,
-    },
-    spectrum: {
-      enabled: true,
-      range: 20000,
-      window: 'HANNING'
-    },
-    network: {
-      startFreq: 10,
-      stopFreq: 100000,
-      points: 100,
-      running: false
-    }
+    generator: { enabled: false, type: 'SINE', frequency: 1000, amplitude: 5, offset: 0 },
+    pwm: { enabled: false, frequency: 10000, dutyCycle: 50 },
+    dc: { voltage: 0 },
+    logicAnalyzer: { enabled: true, channels: Array(16).fill(true), sampleRate: 1000000, triggerMode: 'AUTO', isArmed: false },
+    spectrum: { enabled: true, range: 20000, window: 'HANNING' },
+    network: { startFreq: 10, stopFreq: 100000, points: 100, running: false }
   });
 
   const updateState = <K extends keyof InstrumentState>(key: K, value: Partial<InstrumentState[K]>) => {
-    setState(prev => ({
-      ...prev,
-      [key]: { ...prev[key], ...value }
-    }));
-  };
-
-  const handleUSBConnect = () => {
-    updateState('connectionStatus', 'CONNECTING' as any);
-    setTimeout(() => {
-      updateState('connectionStatus', 'CONNECTED' as any);
-    }, 1500);
+    setState(prev => ({ ...prev, [key]: { ...prev[key], ...value } }));
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 overflow-hidden select-none font-sans">
-      {/* Sidebar Navigation */}
-      <nav className="w-20 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-6 gap-6">
-        <div className="p-2 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20 mb-2">
-          <Activity className="w-8 h-8 text-white" />
+    <div className="flex flex-col h-screen bg-[#f8fafc] text-[#1e293b] overflow-hidden font-sans">
+      {/* Top Navigation Bar */}
+      <nav className="h-14 bg-white border-b border-slate-200 flex items-center px-4 md:px-6 gap-2 shadow-sm z-50">
+        <div className="flex items-center gap-3 mr-4">
+          <div className="p-1.5 bg-blue-600 rounded-lg shadow-blue-500/20">
+            <Activity className="w-5 h-5 text-white" />
+          </div>
         </div>
-        
-        <div className="flex flex-col gap-3 flex-1 overflow-y-auto no-scrollbar">
-          <NavButton active={activeTab === 'GEN'} onClick={() => setActiveTab('GEN')} icon={<Zap size={20} />} label="Gen" />
-          <NavButton active={activeTab === 'SCOPE'} onClick={() => setActiveTab('SCOPE')} icon={<Activity size={20} />} label="Scope" />
-          <NavButton active={activeTab === 'SPECTRUM'} onClick={() => setActiveTab('SPECTRUM')} icon={<Waves size={20} />} label="Spec" />
-          <NavButton active={activeTab === 'NETWORK'} onClick={() => setActiveTab('NETWORK')} icon={<Share2 size={20} />} label="Net" />
-          <NavButton active={activeTab === 'PWM'} onClick={() => setActiveTab('PWM')} icon={<Tally4 size={20} />} label="PWM" />
-          <NavButton active={activeTab === 'LOGIC'} onClick={() => setActiveTab('LOGIC')} icon={<Cpu size={20} />} label="Logic" />
-          <NavButton active={activeTab === 'DC'} onClick={() => setActiveTab('DC')} icon={<Battery size={20} />} label="DC" />
+        <div className="flex h-full gap-1 overflow-x-auto no-scrollbar">
+          <NavTab active={activeTab === 'GEN'} onClick={() => setActiveTab('GEN')} icon={<Zap size={18} />} label="GEN" />
+          <NavTab active={activeTab === 'SCOPE'} onClick={() => setActiveTab('SCOPE')} icon={<Activity size={18} />} label="SCOPE" />
+          <NavTab active={activeTab === 'SPECTRUM'} onClick={() => setActiveTab('SPECTRUM')} icon={<Waves size={18} />} label="SPEC" />
+          <NavTab active={activeTab === 'NETWORK'} onClick={() => setActiveTab('NETWORK')} icon={<Share2 size={18} />} label="NET" />
+          <NavTab active={activeTab === 'PWM'} onClick={() => setActiveTab('PWM')} icon={<Tally4 size={18} />} label="PWM" />
+          <NavTab active={activeTab === 'LOGIC'} onClick={() => setActiveTab('LOGIC')} icon={<Cpu size={18} />} label="LOGIC" />
+          <NavTab active={activeTab === 'DC'} onClick={() => setActiveTab('DC')} icon={<Battery size={18} />} label="DC" />
         </div>
-
-        <button className="p-3 hover:bg-slate-800 rounded-xl transition-colors text-slate-500 mt-2">
-          <Settings size={22} />
-        </button>
       </nav>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 border-b border-slate-800 flex items-center justify-between px-8 bg-slate-900/50 backdrop-blur-md">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              VirtualLab <span className="text-blue-500 text-sm font-mono px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded">Pro v3.2</span>
-            </h1>
-            <div className="h-4 w-[1px] bg-slate-700 mx-2" />
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              {isRunning ? 'SYSTEM RUNNING' : 'SYSTEM IDLE'}
-            </div>
+      {/* Status Header */}
+      <div className="h-14 bg-white/60 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <span className="font-bold text-slate-900">VirtualLab</span>
+          <span className="text-blue-600 text-[11px] font-mono px-2 py-0.5 bg-blue-50 border border-blue-200 rounded">Pro v3.3</span>
+          <div className="w-[1px] h-4 bg-slate-200 mx-2" />
+          <div className="flex items-center gap-2">
+            <div className={`w-2.5 h-2.5 rounded-full ${isRunning ? 'bg-green-500' : 'bg-red-400'}`} />
           </div>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              {state.connectionStatus === 'DISCONNECTED' && (
-                <button 
-                  onClick={handleUSBConnect}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 transition-all"
-                >
-                  <Usb size={14} /> Connect USB Instrument
-                </button>
-              )}
-              {state.connectionStatus === 'CONNECTING' && (
-                <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-900/20 border border-blue-500/30 rounded-lg text-xs font-bold text-blue-400">
-                  <Loader2 size={14} className="animate-spin" /> Enumerating USB...
-                </div>
-              )}
-              {state.connectionStatus === 'CONNECTED' && (
-                <div className="flex items-center gap-2 px-4 py-1.5 bg-green-500/10 border border-green-500/30 rounded-lg text-xs font-bold text-green-500">
-                  <Link size={14} /> Pocket Instrument v2.0
-                </div>
-              )}
-            </div>
-
-            <button 
-              onClick={() => setIsRunning(!isRunning)}
-              className={`flex items-center gap-2 px-6 py-2 rounded-full font-semibold transition-all shadow-lg ${
-                isRunning 
-                ? 'bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500 hover:text-white' 
-                : 'bg-green-500 text-white shadow-green-500/20 hover:scale-105 active:scale-95'
-              }`}
-            >
-              {isRunning ? <Square size={16} /> : <Play size={16} />}
-              {isRunning ? 'STOP' : 'START'}
-            </button>
-          </div>
-        </header>
-
-        <div className="flex-1 p-6 flex gap-6 min-h-0 overflow-hidden">
-          <div className="flex-1 min-w-0 bg-slate-900/40 rounded-2xl border border-slate-800 flex flex-col overflow-hidden relative group shadow-2xl">
-            {activeTab === 'GEN' && <SignalGenerator state={state.generator} onUpdate={(val) => updateState('generator', val)} />}
-            {activeTab === 'SCOPE' && <Oscilloscope state={state} isRunning={isRunning} onUpdate={(val) => updateState('scope', val)} />}
-            {activeTab === 'SPECTRUM' && <SpectrumAnalyzer state={state} isRunning={isRunning} />}
-            {activeTab === 'NETWORK' && <NetworkAnalyzer state={state.network} onUpdate={(val) => updateState('network', val)} />}
-            {activeTab === 'LOGIC' && <LogicAnalyzer state={state} isRunning={isRunning} onUpdate={(val) => updateState('logicAnalyzer', val)} />}
-            {activeTab === 'PWM' && <PWMGenerator state={state.pwm} onUpdate={(val) => updateState('pwm', val)} />}
-            {activeTab === 'DC' && <PowerSupply state={state} onUpdateDC={(val) => updateState('dc', val)} onUpdatePWM={(val) => updateState('pwm', val)} />}
-          </div>
-          <AIAssistant state={state} />
         </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsAIOpen(!isAIOpen)}
+            className={`p-2 rounded-xl transition-all ${isAIOpen ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+          >
+            <MessageSquare size={18} />
+          </button>
+          <button 
+            onClick={() => setIsRunning(!isRunning)}
+            className={`p-2 rounded-xl border transition-all shadow-sm ${isRunning ? 'bg-white border-red-200 text-red-500 hover:bg-red-50' : 'bg-green-600 border-green-600 text-white'}`}
+          >
+            {isRunning ? <Square size={18} /> : <Play size={18} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Workspace */}
+      <main className="flex-1 p-3 md:p-4 overflow-hidden relative">
+        <div className="h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+          {activeTab === 'GEN' && <SignalGenerator state={state.generator} onUpdate={(val) => updateState('generator', val)} />}
+          {activeTab === 'SCOPE' && <Oscilloscope state={state} isRunning={isRunning} onUpdate={(val) => updateState('scope', val)} />}
+          {activeTab === 'SPECTRUM' && <SpectrumAnalyzer state={state} isRunning={isRunning} />}
+          {activeTab === 'NETWORK' && <NetworkAnalyzer state={state.network} onUpdate={(val) => updateState('network', val)} />}
+          {activeTab === 'LOGIC' && <LogicAnalyzer state={state} isRunning={isRunning} onUpdate={(val) => updateState('logicAnalyzer', val)} />}
+          {activeTab === 'PWM' && <PWMGenerator state={state.pwm} onUpdate={(val) => updateState('pwm', val)} />}
+          {activeTab === 'DC' && <PowerSupply state={state} onUpdateDC={(val) => updateState('dc', val)} onUpdatePWM={(val) => updateState('pwm', val)} />}
+        </div>
+
+        {/* Floating AI Assistant */}
+        {isAIOpen && (
+          <div className="fixed right-6 bottom-6 w-80 h-[500px] z-[60] shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+            <AIAssistant state={state} onClose={() => setIsAIOpen(false)} />
+          </div>
+        )}
       </main>
     </div>
   );
 };
 
-const NavButton: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
+const NavTab: React.FC<{ active: boolean; onClick: () => void; icon: React.ReactNode; label: string }> = ({ active, onClick, icon, label }) => (
   <button 
     onClick={onClick}
-    className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 group relative w-full ${
-      active 
-      ? 'bg-blue-600/15 text-blue-500 shadow-[inset_0_0_15px_rgba(59,130,246,0.1)]' 
-      : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
-    }`}
+    className={`h-full px-4 flex flex-col items-center justify-center gap-1 transition-all border-b-2 ${active ? 'border-blue-600 text-blue-600 bg-blue-50/30' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
   >
     {icon}
-    <span className="text-[8px] font-bold uppercase tracking-wider">{label}</span>
-    {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-blue-500 rounded-r-full shadow-lg shadow-blue-500/50" />}
+    <span className="text-[10px] font-bold tracking-tight">{label}</span>
   </button>
 );
 
